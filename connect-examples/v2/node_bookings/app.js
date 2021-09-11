@@ -77,6 +77,7 @@ app.use(function (err, req, res, next) {
       code: 500,
       description: "Something went wrong",
       shortDescription: "Internal Server Error",
+      error: err.message
     });
   }
   // error when time slot is not available when creating a booking
@@ -121,6 +122,7 @@ app.use(function (err, req, res, next) {
       code: err.statusCode,
       description: "Something went wrong",
       shortDescription: "Internal Server Error",
+      error: err.message
     });
   }
   // other errors

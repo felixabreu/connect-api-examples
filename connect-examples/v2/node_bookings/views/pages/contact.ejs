@@ -3,6 +3,29 @@
 
 <head>
   <link rel="stylesheet" href="/stylesheets/style.css" />
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <!-- <script>
+    $("#verifyForm").submit(function(e) {
+
+    e.preventDefault(); // avoid to execute the actual submit of the form.
+
+    var form = $(this);
+    var url = form.attr('action');
+
+    $.ajax({
+          type: "POST",
+          url: url,
+          data: form.serialize(), // serializes the form's elements.
+          success: function(data)
+          {
+
+          }
+        });
+
+
+    });
+;
+  </script> -->
 </head>
 
 <body>
@@ -78,16 +101,22 @@
         </div>
       </div>
     </div>
-    <div class="content-main">
-      <h4>Enter your details</h4>
-      <form class="sq-form-control contact-form" method="POST" action="/booking/create?serviceId=<%= serviceVariation.id %>&staffId=<%= teamMemberBookingProfile.teamMemberId %>&version=<%= serviceVersion %>&startAt=<%= startAt %>">
-        <input class="half-width" type="text" name="givenName" required maxlength="50" placeholder="First name" />
-        <input class="half-width" type="text" name="familyName" required maxlength="50" placeholder="Last name" />
-        <input class="half-width" name="emailAddress" required maxlength="320" placeholder="Email" type="email" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$" title="Invalid email address" />
-        <textarea name="customerNote" placeholder="Appointment notes (optional)" maxlength="1500" rows="5"></textarea>
-
-        <button class="button btn-primary" type="submit">Book appointment</button>
+      <div class="content-main">
+      <% if (!phoneNumber) { %>
+      <h4>Phone Number</h4>
+      <form class="sq-form-control contact-form" method="POST" action="/customers/search?serviceId=<%= serviceVariation.id %>&staffId=<%= teamMemberBookingProfile.teamMemberId %>&version=<%= serviceVersion %>&startAt=<%= startAt %>">
+        <input class="half-width" type="text" name="phoneNumber" required maxlength="10" placeholder="3477689349" pattern="^[0-9]{10}$" title="Invalid phone number" />
+        <button class="button btn-primary" type="submit">Continue</button>
       </form>
+      <%} else { %>
+        <h4>Validate Phone Number</h4>
+        <form class="sq-form-control contact-form" id="verifyForm" method="POST" action="/customers/validate?serviceId=<%= serviceVariation.id %>&staffId=<%= teamMemberBookingProfile.teamMemberId %>&version=<%= serviceVersion %>&startAt=<%= startAt %>">
+          <input class="half-width" type="text" name="authCode" required maxlength="6" pattern="^[0-9]{6}$" title="Please enter authentication code" />
+          <input type="text" name="customerId" value="<%= customerId %>" style="display: none">
+          <input type="text" name="phoneNumber" value="<%= phoneNumber %>" style="display: none"/>
+          <button class="button btn-primary" type="submit">Continue</button>
+        </form>
+      <% } %>
     </div>
   </div>
 </body>

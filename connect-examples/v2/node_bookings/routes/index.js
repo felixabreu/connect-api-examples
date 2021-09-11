@@ -18,12 +18,16 @@ const bookingRoute = require("./booking");
 const contactRoute = require("./contact");
 const servicesRoute = require("./services");
 const staffRoute = require("./staff");
+const customerRoute = require("./customers");
+const paymentRoute = require("./payments")
 
 router.use("/availability", availabilityRoute);
 router.use("/contact", contactRoute);
 router.use("/services", servicesRoute);
 router.use("/staff", staffRoute);
 router.use("/booking", bookingRoute);
+router.use("/customers", customerRoute);
+router.use("/payments", paymentRoute);
 
 /**
  * GET /

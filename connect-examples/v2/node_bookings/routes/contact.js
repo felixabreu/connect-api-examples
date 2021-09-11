@@ -35,6 +35,7 @@ router.get("/", async (req, res, next) => {
   const serviceVersion = req.query.version;
   const staffId = req.query.staff;
   const startAt = req.query.startAt;
+  const phoneNumber = req.body.phoneNumber;
 
   try {
 
@@ -47,7 +48,7 @@ router.get("/", async (req, res, next) => {
     const [ { result: { object : serviceVariation, relatedObjects } }, { result: { teamMemberBookingProfile } } ] = await Promise.all([ retrieveServicePromise, retrieveTeamMemberPromise ]);
     const serviceItem = relatedObjects.filter(relatedObject => relatedObject.type === "ITEM")[0];
 
-    res.render("pages/contact", { serviceItem, serviceVariation, serviceVersion, startAt, teamMemberBookingProfile });
+    res.render("pages/contact", { serviceItem, serviceVariation, serviceVersion, startAt, teamMemberBookingProfile, phoneNumber });
   } catch (error) {
     console.error(error);
     next(error);
