@@ -1,0 +1,225 @@
+<% include("../functions") %>
+<html>
+
+<head>
+  <link rel="stylesheet" href="/stylesheets/style.css" />
+  <script type="text/javascript" src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
+  <script> 
+
+    const appId = 'sandbox-sq0idb-rGCW8OmeC9KrZdhUsCmlsQ';
+    const locationId = 'LP8FVR13X0H4Y';
+    const isUserVerified = document.getElementById('verified');
+
+    async function initializeCard(payments) {
+      const card = await payments.card();
+      await card.attach('#card-container'); 
+      return card; 
+    }
+
+    // This function tokenizes a payment method. 
+    // The ‘error’ thrown from this async function denotes a failed tokenization,
+    // which is due to buyer error (such as an expired card). It is up to the
+    // developer to handle the error and provide the buyer the chance to fix
+    // their mistakes.
+    async function tokenize(paymentMethod) {
+      const tokenResult = await paymentMethod.tokenize();
+      if (tokenResult.status === 'OK') {
+        console.log("token for payment is: ", tokenResult);
+        return tokenResult.token;
+      } else {
+        let errorMessage = `Tokenization failed-status: ${tokenResult.status}`;
+        if (tokenResult.errors) {
+          errorMessage += ` and errors: ${JSON.stringify(
+            tokenResult.errors
+          )}`;
+        }
+        throw new Error(errorMessage);
+      }
+    }
+
+    // Helper method for displaying the Payment Status on the screen.
+    // status is either SUCCESS or FAILURE;
+    // function displayPaymentResults(status) {
+    //   const statusContainer = document.getElementById(
+    //     'payment-status-container'
+    //   );
+    //   if (status === 'SUCCESS') {
+    //     statusContainer.classList.remove('is-failure');
+    //     statusContainer.classList.add('is-success');
+    //   } else {
+    //     statusContainer.classList.remove('is-success');
+    //     statusContainer.classList.add('is-failure');
+    //   }
+
+    //   statusContainer.style.visibility = 'visible';
+    // }    
+
+
+    document.addEventListener('DOMContentLoaded', async function () {
+      if (!window.Square) {
+        throw new Error('Square.js failed to load properly');
+      }
+
+      const payments = window.Square.payments(appId, locationId);
+      let card;
+
+      if (!isUserVerified) {
+        try {
+          card = await initializeCard(payments);
+          console.log("user is not a verified user");
+        } catch (e) {
+          console.error('Initializing Card failed', e);
+          return;
+        }
+      }
+      async function handlePaymentMethodSubmission(event, paymentMethod) {
+        event.preventDefault();
+        const tokenInput = document.getElementById('cardToken');
+
+        try {
+          // disable the submit button as we await tokenization and make a
+          // payment request.
+          cardButton.disabled = true;
+          const token = await tokenize(paymentMethod);
+          tokenInput.value = token;
+          console.log("tokenInput value is: ", tokenInput.value);
+        } catch (e) {
+          cardButton.disabled = false;
+          console.error(e.message);
+        }
+      }
+
+      const cardButton = document.getElementById('card-button');
+      cardButton.addEventListener('click', async function (event) {
+        await handlePaymentMethodSubmission(event, card);
+      });
+
+    });
+
+
+  </script>
+</head>
+
+<body>
+  <header>
+    <%- include("../partials/header") %>
+  </header>
+
+  <div class="content">
+    <div class="content-left">
+      <a class="button" href="/availability/<%= teamMemberBookingProfile.teamMemberId %>/<%= serviceVariation.id %>?version=<%= serviceVersion %>"><span class="icon back-arrow"></span> Back</a>
+      <div class="steps">
+        <div class="steps__step">
+          <div class="steps__step-wrapper">
+            <div class="steps__step-title">
+              <span>Services</span>
+              <a href="/services">Edit</a>
+            </div>
+            <div class="steps__step-body">
+              <div class="steps__step-name">
+                <%= serviceItem.itemData.name %>
+              </div>
+              <div class="steps__step-description">
+                <%= formatTime(serviceVariation.itemVariationData.serviceDuration) %>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="steps__step">
+          <div class="steps__step-wrapper">
+            <div class="steps__step-title">
+              <span>Select staff</span>
+              <a href="/staff/<%= serviceVariation.id %>?version=<%= serviceVersion %>">Edit</a>
+            </div>
+            <div class="availability-staff__card-wrapper">
+              <div class="staff__card-picture-wrapper">
+                <% if (teamMemberBookingProfile.profileImageUrl) { %>
+                  <img src="<%= teamMemberBookingProfile.profileImageUrl %>" />
+                <% } else { %>
+                  <%= getStaffInitials(teamMemberBookingProfile.displayName) %>
+                <% } %>
+              </div>
+              <div class="steps__staff-step-body">
+                <div class="steps__step-name">
+                  <%= teamMemberBookingProfile.displayName %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="steps__step">
+          <div class="steps__step-wrapper">
+            <div class="steps__step-title">
+              <span>Appointment time</span>
+              <a href="/availability/<%= teamMemberBookingProfile.teamMemberId %>/<%= serviceVariation.id %>?version=<%= serviceVersion %>">Edit</a>
+            </div>
+            <div class="steps__step-body">
+              <div class="steps__step-name">
+                <%= convertDateToText(startAt, location.timezone) %>
+              </div>
+              <div class="steps__step-description">
+                <%= convertTimeToText(startAt, location.timezone) %>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="steps__step selected">
+          <div class="steps__step-wrapper">
+            <div class="steps__step-title">
+              <span>Enter your details</span>
+              <span class="icon side-caret-selected"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+      <div class="content-main">
+      
+      <h4>Enter your details</h4>
+      <% if (!verified) { %>
+        <form class="sq-form-control contact-form" method="POST" action="/payments?serviceId=<%= serviceVariation.id %>&phoneNumber=<%= phoneNumber %>&staffId=<%= teamMemberBookingProfile.teamMemberId %>&version=<%= serviceVersion %>&startAt=<%= startAt %>">
+          <input class="half-width" type="text" name="givenName" required maxlength="50" placeholder="First name" />
+          <input class="half-width" type="text" name="familyName" required maxlength="50" placeholder="Last name" />
+          <input class="half-width" type="text" name="phoneNumber" required maxlength="12" placeholder="+13477689349" pattern="^\+1[0-9]{10}$" value="<%= phoneNumber %>" title="Invalid phone number" />
+          <input class="half-width" type="email" name="emailAddress" required maxlength="320" placeholder="Email" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$" title="Invalid email address" />
+          <input type="text" name="cardToken" id="cardToken" style="display: none">
+          <input type="text" name="verified" id="verified" style="display: none" value="<%= verified %>">
+          <textarea name="customerNote" placeholder="Appointment notes (optional)" maxlength="1500" rows="5"></textarea>
+
+
+          <button class="button btn-primary" id="book" type="submit">Book Appointment</button>
+          <!-- <input class="half-width" type="text" name="creditCard" required maxlength="16" placeholder="1234 5678 9012 3456" pattern="^[0-9]{16}$" title="Invalid Card Number" />
+          <input class="half-width" type="text" name="expirationDate" required maxlength="5" placeholder="MM/YY" pattern="^[0-9]{2}\/[0-9]{2}$" title="Invalid Expiration Date" />
+          <input class="half-width" type="text" name="cvv" required maxlength="3" placeholder="CVV" pattern="^[0-9]{3}$" title="Invalid CVV" />
+          <input class="half-width" type="text" name="zipcode" required maxlength="5" placeholder="ZIP" pattern="^[0-9]{5}$" title="Invalid Zip Code" />
+          <button class="button btn-primary" type="submit">Book appointment</button> -->
+        </form>
+        <h4 class="full-width">Reserve Your Appointment With a Card</h4>
+        <p class="full-width">A credit or debit card is required to book your appointment.</p>
+        <div id="card-container"></div>
+
+        <button class="button btn-primary" id="card-button" type="button">Pay $1.00</button>
+
+        <%} else { %>
+          <form class="sq-form-control contact-form" method="POST" action="/payments?serviceId=<%= serviceVariation.id %>&phoneNumber=<%= phoneNumber %>&staffId=<%= teamMemberBookingProfile.teamMemberId %>&version=<%= serviceVersion %>&startAt=<%= startAt %>">
+            <input class="half-width" type="text" name="givenName" required maxlength="50" placeholder="First name" value="<%= customer.givenName %>"/>
+            <input class="half-width" type="text" name="familyName" required maxlength="50" placeholder="Last name" value="<%= customer.familyName %>"/>
+            <input class="half-width" type="text" name="phoneNumber" required maxlength="12" placeholder="+13477689349" pattern="^\+1[0-9]{10}$" value="<%= phoneNumber %>" title="Invalid phone number" />
+            <input class="half-width" type="email" name="emailAddress" required maxlength="320" placeholder="Email" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$" value="<%= customer.emailAddress %>" title="Invalid email address" />
+            <input type="text" name="cardToken" id="cardToken" style="display: none" value="<%= card.id %>">
+            <input type="text" name="customerId" id="customerId" style="display: none" value="<%= customer.id %>">
+            <input type="text" name="verified" id="verified" style="display: none" value="<%= verified %>">
+            <textarea name="customerNote" placeholder="Appointment notes (optional)" maxlength="1500" rows="5"></textarea>
+
+            <h2 class="full-width">*Charging <%= card.cardBrand %> card ending in <%= card.last4 %></h2>
+  
+  
+            <button class="button btn-primary" id="book" type="submit">Book Appointment</button>
+          </form>
+        <% } %>
+
+    </div>
+  </div>
+</body>
+</html>
