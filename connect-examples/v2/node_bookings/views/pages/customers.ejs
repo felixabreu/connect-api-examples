@@ -4,6 +4,8 @@
 <head>
   <link rel="stylesheet" href="/stylesheets/style.css" />
   <script type="text/javascript" src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+
   <script> 
 
     const appId = 'sandbox-sq0idb-rGCW8OmeC9KrZdhUsCmlsQ';
@@ -63,7 +65,6 @@
       const payments = window.Square.payments(appId, locationId);
       let card;
 
-      if (!isUserVerified) {
         try {
           card = await initializeCard(payments);
           console.log("user is not a verified user");
@@ -71,7 +72,6 @@
           console.error('Initializing Card failed', e);
           return;
         }
-      }
       async function handlePaymentMethodSubmission(event, paymentMethod) {
         event.preventDefault();
         const tokenInput = document.getElementById('cardToken');
@@ -89,12 +89,65 @@
         }
       }
 
-      const cardButton = document.getElementById('card-button');
-      cardButton.addEventListener('click', async function (event) {
-        await handlePaymentMethodSubmission(event, card);
-      });
+      const cardButton = document.getElementById('book');
+      $('form').on('submit', async function (event) {
+        event.preventDefault();
+        const newCardForVerifiedUser = document.getElementById('newCardForVerifiedUser').value;
+        const customerId = document.getElementById('customerId');
+        const bookingDetails = document.getElementById('bookingDetails');
 
+        // if returning user pays with card on file
+        if (customerId && newCardForVerifiedUser === "false") {
+          $.ajax({
+            type: 'post',
+            url: bookingDetails.value,
+            data: $('form').serialize(),
+            success: function (success) {
+              console.log(success);
+              window.location.href = "/booking/" + success.bookingId;
+            },
+            error: function (error) {
+              alert('form had an error');
+              console.log(error);
+            }
+          });
+        } else {
+            await handlePaymentMethodSubmission(event, card);
+            $.ajax({
+              type: 'post',
+              url: bookingDetails.value,
+              data: $('form').serialize(),
+              success: function (success) {
+                console.log(success);
+                window.location.href = "/booking/" + success.bookingId;
+              },
+              error: function (error) {
+                alert('form had an error');
+                console.log(error);
+              }
+            });
+
+        }
+      })
+      
+      const cardSwitcher = document.getElementById('card-switcher');
+      cardSwitcher.addEventListener('click', function () {
+        const cardContainer = document.getElementById('card-container');
+        const newCardForVerifiedUser = document.getElementById('newCardForVerifiedUser');
+        const chargingCardMessage = document.getElementById('charging-card-message');
+        const agreementCheckbox = document.getElementById('agreement');
+        const agreementLabel = document.getElementById('agreementLabel');
+        chargingCardMessage.innerHTML = "A credit or debit card is required to book your appointment.";
+        chargingCardMessage.style.fontStyle = "none";
+        cardSwitcher.style.display = "none";
+        cardContainer.style.display = "block";
+        newCardForVerifiedUser.value = "true";
+        agreementCheckbox.required = true;
+        agreementCheckbox.style.display = "inline-block";
+        agreementLabel.style.display = "block";
+      })
     });
+
 
 
   </script>
@@ -179,40 +232,58 @@
       <h4>Enter your details</h4>
       <% if (!verified) { %>
         <form class="sq-form-control contact-form" method="POST" action="/payments?serviceId=<%= serviceVariation.id %>&phoneNumber=<%= phoneNumber %>&staffId=<%= teamMemberBookingProfile.teamMemberId %>&version=<%= serviceVersion %>&startAt=<%= startAt %>">
-          <input class="half-width" type="text" name="givenName" required maxlength="50" placeholder="First name" />
-          <input class="half-width" type="text" name="familyName" required maxlength="50" placeholder="Last name" />
-          <input class="half-width" type="text" name="phoneNumber" required maxlength="12" placeholder="+13477689349" pattern="^\+1[0-9]{10}$" value="<%= phoneNumber %>" title="Invalid phone number" />
-          <input class="half-width" type="email" name="emailAddress" required maxlength="320" placeholder="Email" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$" title="Invalid email address" />
+          <input class="half-width" type="text" name="givenName" required maxlength="50" placeholder="First Name" title="First Name" oninvalid="this.setCustomValidity('Please enter your First Name')" oninput="setCustomValidity('')"/>
+          <input class="half-width" type="text" name="familyName" required maxlength="50" placeholder="Last Name" title="Last Name" oninvalid="this.setCustomValidity('Please enter your Last Name')" oninput="setCustomValidity('')"/>
+          <input class="half-width" type="text" name="phoneNumber" required maxlength="12" placeholder="+13477689349" pattern="^\+1[0-9]{10}$" value="<%= phoneNumber %>" title="Phone Number" oninvalid="this.setCustomValidity('Please enter a valid phone number')" oninput="setCustomValidity('')"/>
+          <input class="half-width" type="email" name="emailAddress" required maxlength="320" placeholder="Email" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$" title="Email Address" oninvalid="this.setCustomValidity('Please enter a valid email address')" oninput="setCustomValidity('')"/>
           <input type="text" name="cardToken" id="cardToken" style="display: none">
           <input type="text" name="verified" id="verified" style="display: none" value="<%= verified %>">
+          <input type="text" name="bookingDetails" id="bookingDetails" style="display: none" value="/payments?serviceId=<%= serviceVariation.id %>&phoneNumber=<%= phoneNumber %>&staffId=<%= teamMemberBookingProfile.teamMemberId %>&version=<%= serviceVersion %>&startAt=<%= startAt %>">
           <textarea name="customerNote" placeholder="Appointment notes (optional)" maxlength="1500" rows="5"></textarea>
+          <div style="width: 100%">
+          <h4 class="full-width">Reserve Your Appointment With a Card</h4>
+          <p class="full-width">A credit or debit card is required to book your appointment.</p>
+        </div>
+          <input type="text" name="newCardForVerifiedUser" id="newCardForVerifiedUser" value="false" style="display: none">
+          <div id="card-container"></div>
 
-
-          <button class="button btn-primary" id="book" type="submit">Book Appointment</button>
-          <!-- <input class="half-width" type="text" name="creditCard" required maxlength="16" placeholder="1234 5678 9012 3456" pattern="^[0-9]{16}$" title="Invalid Card Number" />
-          <input class="half-width" type="text" name="expirationDate" required maxlength="5" placeholder="MM/YY" pattern="^[0-9]{2}\/[0-9]{2}$" title="Invalid Expiration Date" />
-          <input class="half-width" type="text" name="cvv" required maxlength="3" placeholder="CVV" pattern="^[0-9]{3}$" title="Invalid CVV" />
-          <input class="half-width" type="text" name="zipcode" required maxlength="5" placeholder="ZIP" pattern="^[0-9]{5}$" title="Invalid Zip Code" />
-          <button class="button btn-primary" type="submit">Book appointment</button> -->
+          <label for="agreement" style="margin-bottom: 15px"><input type="checkbox" name="agreement" required id="agreement" style="margin-bottom: 0px" oninvalid="this.setCustomValidity('You must agree in order to book your appointment')" oninput="setCustomValidity('')">
+            I authorize SP WAX & SKIN CARE to store this card for future purchases until I cancel this authorization.</label>
+            <label for="cancellation" style="margin-bottom: 15px"><input type="checkbox" name="cancellation" required id="cancellation" style="margin-bottom: 0px" oninvalid="this.setCustomValidity('You must agree in order to book your appointment')" oninput="setCustomValidity('')">
+              I have read and agree to the cancellation policy of SP WAX & SKIN CARE and Square's privacy policy.</label>
+          <button class="button btn-primary" id="book" type="submit" dsiabled="disabled">Book Appointment</button>
         </form>
-        <h4 class="full-width">Reserve Your Appointment With a Card</h4>
-        <p class="full-width">A credit or debit card is required to book your appointment.</p>
-        <div id="card-container"></div>
 
-        <button class="button btn-primary" id="card-button" type="button">Pay $1.00</button>
 
         <%} else { %>
           <form class="sq-form-control contact-form" method="POST" action="/payments?serviceId=<%= serviceVariation.id %>&phoneNumber=<%= phoneNumber %>&staffId=<%= teamMemberBookingProfile.teamMemberId %>&version=<%= serviceVersion %>&startAt=<%= startAt %>">
-            <input class="half-width" type="text" name="givenName" required maxlength="50" placeholder="First name" value="<%= customer.givenName %>"/>
-            <input class="half-width" type="text" name="familyName" required maxlength="50" placeholder="Last name" value="<%= customer.familyName %>"/>
-            <input class="half-width" type="text" name="phoneNumber" required maxlength="12" placeholder="+13477689349" pattern="^\+1[0-9]{10}$" value="<%= phoneNumber %>" title="Invalid phone number" />
-            <input class="half-width" type="email" name="emailAddress" required maxlength="320" placeholder="Email" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$" value="<%= customer.emailAddress %>" title="Invalid email address" />
+            <input class="half-width" type="text" name="givenName" required maxlength="50" placeholder="First name" value="<%= customer.givenName %>" title="First Name" oninvalid="this.setCustomValidity('Please enter your First Name')" oninput="setCustomValidity('')"/>
+            <input class="half-width" type="text" name="familyName" required maxlength="50" placeholder="Last name" value="<%= customer.familyName %>" title="Last Name" oninvalid="this.setCustomValidity('Please enter your Last Name')" oninput="setCustomValidity('')"/>
+            <input class="half-width" type="text" name="phoneNumber" required maxlength="12" placeholder="+13477689349" pattern="^\+1[0-9]{10}$" value="<%= phoneNumber %>" title="Phone Number" oninvalid="this.setCustomValidity('Please enter a valid phone number')" oninput="setCustomValidity('')" />
+            <input class="half-width" type="email" name="emailAddress" required maxlength="320" placeholder="Email" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,4}$" value="<%= customer.emailAddress %>" title="Email Address" oninvalid="this.setCustomValidity('Please enter a valid email address')" oninput="setCustomValidity('')"/>
             <input type="text" name="cardToken" id="cardToken" style="display: none" value="<%= card.id %>">
             <input type="text" name="customerId" id="customerId" style="display: none" value="<%= customer.id %>">
             <input type="text" name="verified" id="verified" style="display: none" value="<%= verified %>">
-            <textarea name="customerNote" placeholder="Appointment notes (optional)" maxlength="1500" rows="5"></textarea>
+            <textarea name="customerNote" placeholder="Appointment notes (optional)" maxlength="1500" rows="5" style="margin-bottom: 5px"></textarea>
+            <input type="text" name="bookingDetails" id="bookingDetails" style="display: none" value="/payments?serviceId=<%= serviceVariation.id %>&phoneNumber=<%= phoneNumber %>&staffId=<%= teamMemberBookingProfile.teamMemberId %>&version=<%= serviceVersion %>&startAt=<%= startAt %>">
+            <div style="width: 100%">
+              <h4 class="full-width">Reserve Your Appointment With a Card</h4>
+            </div>
+            <div style="width: 100%">
+              <h5 class="full-width" id="charging-card-message" style="margin-top: 0px; margin-bottom: 0px;">*Charging <%= card.cardBrand %> card ending in <%= card.last4 %></h5>
+              <p class="full-width card-switcher" id="card-switcher" style="margin-top: 0px">Pay with a different card</p>
+            </div>
 
-            <h2 class="full-width">*Charging <%= card.cardBrand %> card ending in <%= card.last4 %></h2>
+            <input type="text" name="newCardForVerifiedUser" id="newCardForVerifiedUser" value="false" style="display: none">
+            <div id="card-container" style="display: none"></div>
+
+            <label for="agreement" style="margin-bottom: 15px; display: none;" id="agreementLabel"><input type="checkbox" name="agreement" id="agreement" style="margin-bottom: 0px; display: none;" oninvalid="this.setCustomValidity('You must agree in order to book your appointment')" oninput="setCustomValidity('')">
+              I authorize SP WAX & SKIN CARE to store this card for future purchases until I cancel this authorization.</label>
+
+            <label for="cancellation" style="margin-bottom: 15px"><input type="checkbox" name="cancellation" required id="cancellation" style="margin-bottom: 0px" oninvalid="this.setCustomValidity('You must agree in order to book your appointment')" oninput="setCustomValidity('')">
+              I have read and agree to the cancellation policy of SP WAX & SKIN CARE and Square's privacy policy.</label>
+
+
   
   
             <button class="button btn-primary" id="book" type="submit">Book Appointment</button>

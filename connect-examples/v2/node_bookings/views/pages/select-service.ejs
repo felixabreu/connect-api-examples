@@ -49,6 +49,15 @@
         </div>
       </div>
       <div class="business__contact">
+        <h4>Hours</h4>
+        <div>
+          <span>Monday, Tuesday: 1pm-8pm</span> <br>
+          <span>Wednesday, Friday: 2pm-8pm</span> <br>
+          <span>Saturday: 1pm-6pm</span> <br>
+          <span>Thursday, Sunday: Closed</span>
+        </div>
+      </div>
+      <div class="business__contact">
       <h4>Contact</h4>
       <%if (location.phoneNumber || location.businessEmail) { %>
         <%if (location.businessEmail) { %>
@@ -78,6 +87,7 @@
       <div class="cards">
         <% items.forEach(function(item) { %>
           <% item.itemData.variations.forEach(function(variation) { %>
+
             <a href="/staff/<%= variation.id %>?version=<%= variation.version %>">
               <div class="card__wrapper">
                 <div class="card__info">
@@ -92,8 +102,9 @@
                     • <%= formatTime(variation.itemVariationData.serviceDuration) %>
                     </span>
                 </div>
-                <span class="card__icon"></span>
-                <img src="images/side-caret.svg">
+                <input type="checkbox">
+                <!-- <span class="card__icon"></span>
+                <img src="images/side-caret.svg"> -->
               </div>
             </a>
           <%}); %>

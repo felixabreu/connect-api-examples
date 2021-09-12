@@ -664,3 +664,11 @@ a:visited {
     margin: 9px;
   }
 }
+
+.card-switcher {
+  font-style: italic;
+}
+.card-switcher:hover {
+  cursor: pointer;
+  color: blue;
+}

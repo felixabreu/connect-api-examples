@@ -41,10 +41,7 @@ router.post("/", async (req, res, next) => {
     const emailAddress = req.body.emailAddress;
     const customerNote = req.body.customerNote;
     const cardToken = req.body.cardToken;
-    const verified = req.body.verified;
     const customerId = req.body.customerId;
-    // console.log(cardToken);
-    // console.log("is user verified: ", isUserVerified);
 
     const serviceId = req.query.serviceId;
     const serviceVariationVersion = req.query.version;
@@ -58,9 +55,7 @@ router.post("/", async (req, res, next) => {
     const durationMinutes = convertMsToMins(serviceInfo.itemVariationData.serviceDuration);
 
     //const durationMinutes = convertMsToMins(serviceInfo.body.itemData.serviceDuration);
-        console.log("trying to create booking");
     if (!customerId) {
-        console.log("user is not verified");
         // create customer
         const { result: { customer } } = await customersApi.createCustomer({
             givenName: firstName,
@@ -71,8 +66,6 @@ router.post("/", async (req, res, next) => {
             idempotencyKey: uuidv4(),
             note: customerNote
         });
-
-        console.log("customer created, id: ", )
 
         // store card
         const { result: { card: storeCardConfirmation } } = await cardsApi.createCard({
@@ -115,13 +108,12 @@ router.post("/", async (req, res, next) => {
 
             // const [ { result: { customerInfoConfirmed } }, { result: { storeCardInfoConfirmed } }, { result: { paymentInfoConfirmed } }, { result: { bookingInfoConfirmed } } ] =
     //   await Promise.all([ customer, storeCardConfirmation, payment, booking ]);
-        res.redirect("/booking/" + booking.id);
+        // res.redirect("/booking/" + booking.id);
+        res.send({bookingId: booking.id});
 
     } else {
 
         // create payment using stored card
-        console.log("creating payment with card on file")
-        console.log("card token is: ", cardToken)
         const { result: { payment } } = await paymentsApi.createPayment({
             sourceId: cardToken,
             idempotencyKey: uuidv4(),
@@ -151,7 +143,7 @@ router.post("/", async (req, res, next) => {
         idempotencyKey: uuidv4(),
         });
 
-        res.redirect("/booking/" + booking.id);
+        res.send({bookingId: booking.id});
         
     }
 
