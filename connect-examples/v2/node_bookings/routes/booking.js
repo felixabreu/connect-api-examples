@@ -137,24 +137,41 @@ router.get("/:bookingId", async (req, res, next) => {
   try {
     // Retrieve the booking provided by the bookingId.
     const { result: { booking } } = await bookingsApi.retrieveBooking(bookingId);
+    // sample booking id - p96p5u6kbedbl0
+    let serviceIds = [];
+    let durationMinutes = 0;
 
-    const serviceVariationId = booking.appointmentSegments[0].serviceVariationId;
+    booking.appointmentSegments.forEach(appointment => {
+      serviceIds.push(appointment.serviceVariationId);
+      durationMinutes = durationMinutes + appointment.durationMinutes;
+    })
+    // const serviceVariationId = booking.appointmentSegments[0].serviceVariationId;
     const teamMemberId = booking.appointmentSegments[0].teamMemberId;
 
     // Make API call to get service variation details
-    const retrieveServiceVariationPromise = catalogApi.retrieveCatalogObject(serviceVariationId, true);
+    const { result } = await catalogApi.batchRetrieveCatalogObjects({
+      objectIds: serviceIds,
+      includeRelatedObjects: true
+    });
+
+    const serviceItems = result.objects;
+    console.log(serviceItems);
+    let depositAmount = 0n;
+    serviceItems.forEach(service => {
+        depositAmount = depositAmount + service.itemVariationData.priceMoney.amount;
+    });
+
+    depositAmount = ((Number(depositAmount)/2)) * .01;
 
     // Make API call to get team member details
-    const retrieveTeamMemberPromise = bookingsApi.retrieveTeamMemberBookingProfile(teamMemberId);
+    const { result: { teamMemberBookingProfile } } = await bookingsApi.retrieveTeamMemberBookingProfile(teamMemberId);
 
     // Wait until all API calls have completed
-    const [ { result: service }, { result: { teamMemberBookingProfile } } ] =
-      await Promise.all([ retrieveServiceVariationPromise, retrieveTeamMemberPromise ]);
 
-    const serviceVariation = service.object;
-    const serviceItem = service.relatedObjects.filter(relatedObject => relatedObject.type === "ITEM")[0];
+    // const serviceVariation = service.object;
+//    const serviceItem = service.relatedObjects.filter(relatedObject => relatedObject.type === "ITEM")[0];
 
-    res.render("pages/confirmation", { booking, serviceItem, serviceVariation, teamMemberBookingProfile });
+    res.render("pages/confirmation", { booking, durationMinutes, serviceItems, teamMemberBookingProfile, depositAmount });
   } catch (error) {
     console.error(error);
     next(error);
@@ -174,18 +191,13 @@ router.get("/:bookingId/reschedule", async (req, res, next) => {
     const { result: { booking } } = await bookingsApi.retrieveBooking(bookingId);
     const { serviceVariationId, teamMemberId, serviceVariationVersion } = booking.appointmentSegments[0];
     const startAt = dateHelpers.getStartAtDate();
+    let serviceIds = [];
+
     const searchRequest = {
       query: {
         filter: {
           locationId,
-          segmentFilters: [
-            {
-              serviceVariationId,
-              teamMemberIdFilter: {
-                any: [ teamMemberId ],
-              }
-            },
-          ],
+          segmentFilters: [],
           startAtRange: {
             endAt: dateHelpers.getEndAtDate(startAt).toISOString(),
             startAt: startAt.toISOString(),
@@ -193,9 +205,29 @@ router.get("/:bookingId/reschedule", async (req, res, next) => {
         }
       }
     };
+
+    booking.appointmentSegments.forEach(appointment => {
+      const segmentFilter = {
+        serviceVariationId: appointment.serviceVariationId,
+        teamMemberIdFilter: {
+          any: [
+            appointment.teamMemberId
+          ]
+        },
+        serviceVariationVersion: appointment.serviceVariationVersion,
+      }
+      searchRequest.query.filter.segmentFilters.push(segmentFilter);
+      serviceIds.push(appointment.serviceVariationId);
+    });
     // get availability
     const { result: { availabilities } } = await bookingsApi.searchAvailability(searchRequest);
-    res.render("pages/reschedule", { availabilities, bookingId, serviceId: serviceVariationId, serviceVersion: serviceVariationVersion });
+    const { result } = await catalogApi.batchRetrieveCatalogObjects({
+      objectIds: serviceIds,
+      includeRelatedObjects: true
+    });
+    const serviceItems = result.objects;
+    const bookingProfile = {};
+    res.render("pages/reschedule", { availabilities, serviceItems, bookingId, bookingProfile });
   } catch (error) {
     console.error(error);
     next(error);

@@ -34,15 +34,24 @@
           </div>
           <div class="content__card-date">
             <h5>
-              <% formatDateToParts(booking.startAt, location.timezone, booking.appointmentSegments[0].durationMinutes).forEach(function(part) { %>
+              <% formatDateToParts(booking.startAt, location.timezone, durationMinutes).forEach(function(part) { %>
                 <%= part %>
                 <br>
               <%}); %>
             </h5>
           </div>
           <div class="content__card-description">
-            <span><%= serviceItem.itemData.name %> - <%= serviceVariation.itemVariationData.name %></span>
+            <% serviceItems.forEach(function(serviceItem) { %>
+                <span>  <%= serviceItem.itemVariationData.name %> </span>
+                <br>
+              <%}); %>
           </div>
+          <br>
+          <span>Total Paid - $<%= depositAmount %></span>
+          <br>
+          <span>Remaining Balance - $<%= depositAmount%></span>
+          <br><br>
+          <span style="font-style: italic;">Remaining balance to be paid at the time of appointment.</span>
           <div class="business__location">
             <div>
               <%if (location.address) { %>

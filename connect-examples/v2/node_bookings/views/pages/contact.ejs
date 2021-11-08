@@ -35,7 +35,7 @@
 
   <div class="content">
     <div class="content-left">
-      <a class="button" href="/availability/<%= teamMemberBookingProfile.teamMemberId %>/<%= serviceVariation.id %>?version=<%= serviceVersion %>"><span class="icon back-arrow"></span> Back</a>
+      <a class="button" href="/availability?ids=<%= JSON.stringify(serviceIds) %>"><span class="icon back-arrow"></span> Back</a>
       <div class="steps">
         <div class="steps__step">
           <div class="steps__step-wrapper">
@@ -43,22 +43,21 @@
               <span>Services</span>
               <a href="/services">Edit</a>
             </div>
-            <div class="steps__step-body">
-              <div class="steps__step-name">
-                <%= serviceItem.itemData.name %>
+            <% serviceItems.forEach(function(serviceItem) { %>
+              <div class="steps__step-body">
+                <div class="steps__step-name">
+                  <%= serviceItem.itemVariationData.name %>
+                </div>
+                <div class="steps__step-description">
+                  <%= formatTime(serviceItem.itemVariationData.serviceDuration) %> - $<%= depositAmount %>
+                </div>
               </div>
-              <div class="steps__step-description">
-                <%= formatTime(serviceVariation.itemVariationData.serviceDuration) %>
-              </div>
-            </div>
+              <%}); %>
+              <div class="steps__step-name" style="margin-top: 10px;">Total - $<%= depositAmount * 2%></div>
           </div>
         </div>
         <div class="steps__step">
           <div class="steps__step-wrapper">
-            <div class="steps__step-title">
-              <span>Select staff</span>
-              <a href="/staff/<%= serviceVariation.id %>?version=<%= serviceVersion %>">Edit</a>
-            </div>
             <div class="availability-staff__card-wrapper">
               <div class="staff__card-picture-wrapper">
                 <% if (teamMemberBookingProfile.profileImageUrl) { %>
@@ -79,7 +78,8 @@
           <div class="steps__step-wrapper">
             <div class="steps__step-title">
               <span>Appointment time</span>
-              <a href="/availability/<%= teamMemberBookingProfile.teamMemberId %>/<%= serviceVariation.id %>?version=<%= serviceVersion %>">Edit</a>
+              <!-- add on click script to submit a post call to the endpoint to render the availability page-->
+              <a href="/availability?ids=<%= JSON.stringify(serviceIds) %>">Edit</a>
             </div>
             <div class="steps__step-body">
               <div class="steps__step-name">
@@ -104,18 +104,22 @@
       <div class="content-main">
       <% if (!phoneNumber) { %>
       <h4>Phone Number</h4>
-      <form class="sq-form-control contact-form" method="POST" action="/customers/search?serviceId=<%= serviceVariation.id %>&staffId=<%= teamMemberBookingProfile.teamMemberId %>&version=<%= serviceVersion %>&startAt=<%= startAt %>">
+      <form class="sq-form-control contact-form" method="POST" action="/customers/search?serviceIds=<%= JSON.stringify(serviceIds) %>&staffId=<%= teamMemberBookingProfile.teamMemberId %>&startAt=<%= startAt %>">
         <input class="half-width" type="text" name="phoneNumber" required maxlength="10" placeholder="3477689349" pattern="^[0-9]{10}$" title="Invalid phone number" />
         <button class="button btn-primary" type="submit">Continue</button>
       </form>
       <%} else { %>
-        <h4>Validate Phone Number</h4>
-        <form class="sq-form-control contact-form" id="verifyForm" method="POST" action="/customers/validate?serviceId=<%= serviceVariation.id %>&staffId=<%= teamMemberBookingProfile.teamMemberId %>&version=<%= serviceVersion %>&startAt=<%= startAt %>">
+        <h4>Enter Verification Code</h4>
+        <form class="sq-form-control contact-form" id="verifyForm" method="POST" action="/customers/validate?serviceIds=<%= JSON.stringify(serviceIds) %>&staffId=<%= teamMemberBookingProfile.teamMemberId %>&startAt=<%= startAt %>">
           <input class="half-width" type="text" name="authCode" required maxlength="6" pattern="^[0-9]{6}$" title="Please enter authentication code" />
           <input type="text" name="customerId" value="<%= customerId %>" style="display: none">
           <input type="text" name="phoneNumber" value="<%= phoneNumber %>" style="display: none"/>
           <button class="button btn-primary" type="submit">Continue</button>
         </form>
+        <!-- <form class="sq-form-control contact-form" id="requestCode" method="POST" action="/customers/search?serviceIds=<%= JSON.stringify(serviceIds) %>&staffId=<%= teamMemberBookingProfile.teamMemberId %>&startAt=<%= startAt %>">
+          <input type="text" name="phoneNumber" value="<%= phoneNumber %>" style="display: none"/>
+          <button class="button btn-primary" type="submit">Request New Code</button>
+        </form> -->
       <% } %>
     </div>
   </div>

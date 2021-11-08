@@ -31,24 +31,36 @@ const {
  * `version` - the version of the service initially selected
  */
 router.get("/", async (req, res, next) => {
-  const serviceId = req.query.serviceId;
-  const serviceVersion = req.query.version;
+  console.log("entering api for contact");
+  const serviceIds = JSON.parse(req.query.serviceItems);
   const staffId = req.query.staff;
   const startAt = req.query.startAt;
   const phoneNumber = req.body.phoneNumber;
 
+  console.log("entering try clause in contact api");
+
   try {
 
     // Send request to get the service associated with the given item variation ID, and related objects.
-    const retrieveServicePromise = catalogApi.retrieveCatalogObject(serviceId, true);
+    // const retrieveServicePromise = catalogApi.retrieveCatalogObject(serviceId, true);
+    const { result } = await catalogApi.batchRetrieveCatalogObjects({
+      objectIds: serviceIds
+    });
 
-    // Send request to get the team member profile of the staff selected
-    const retrieveTeamMemberPromise = bookingsApi.retrieveTeamMemberBookingProfile(staffId);
+    const serviceItems = result.objects;
+    let depositAmount = 0n;
+    serviceItems.forEach(service => {
+        depositAmount = depositAmount + service.itemVariationData.priceMoney.amount;
+    });
 
-    const [ { result: { object : serviceVariation, relatedObjects } }, { result: { teamMemberBookingProfile } } ] = await Promise.all([ retrieveServicePromise, retrieveTeamMemberPromise ]);
-    const serviceItem = relatedObjects.filter(relatedObject => relatedObject.type === "ITEM")[0];
+    depositAmount = ((Number(depositAmount)/2)) * .01;
+    // // Send request to get the team member profile of the staff selected
+    const { result: { teamMemberBookingProfile } } = await bookingsApi.retrieveTeamMemberBookingProfile(staffId);
 
-    res.render("pages/contact", { serviceItem, serviceVariation, serviceVersion, startAt, teamMemberBookingProfile, phoneNumber });
+    // const [ { result: { object : serviceVariation, relatedObjects } }, { result: { teamMemberBookingProfile } } ] = await Promise.all([ retrieveServicePromise, retrieveTeamMemberPromise ]);
+    // const serviceItem = relatedObjects.filter(relatedObject => relatedObject.type === "ITEM")[0];
+
+    res.render("pages/contact", { serviceItems, serviceIds, startAt, teamMemberBookingProfile, phoneNumber, depositAmount });
   } catch (error) {
     console.error(error);
     next(error);

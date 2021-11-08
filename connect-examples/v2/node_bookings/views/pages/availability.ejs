@@ -9,7 +9,7 @@
     </header>
     <div class="content">
       <div class="content-left">
-        <a class="button" href="/staff/<%= serviceId %>?version=<%= serviceVersion %>"><span class="icon back-arrow"></span> Back</a>
+        <a class="button" href="/services"><span class="icon back-arrow"></span> Back</a>
         <div class="steps">
           <div class="steps__step">
             <div class="steps__step-wrapper">
@@ -17,27 +17,26 @@
                 <span>Services</span>
                 <a href="/services">Edit</a>
               </div>
+              <% serviceItems.forEach(function(serviceItem) { %>
               <div class="steps__step-body">
                 <div class="steps__step-name">
-                  <%= serviceItem.itemData.name %>
+                  <%= serviceItem.itemVariationData.name %>
                 </div>
                 <div class="steps__step-description">
-                  <%= formatTime(serviceVariation.itemVariationData.serviceDuration) %>
+                  <%= formatTime(serviceItem.itemVariationData.serviceDuration) %> - $<%= depositAmount %>
                 </div>
               </div>
+              <%}); %>
+              <div class="steps__step-name" style="margin-top: 10px;">Total - $<%= depositAmount * 2%></div>
             </div>
           </div>
           <div class="steps__step">
             <div class="steps__step-wrapper">
-              <div class="steps__step-title">
-                <span>Select staff</span>
-                <a href="/staff/<%= serviceId %>?version=<%= serviceVersion %>">Edit</a>
-              </div>
               <div class="availability-staff__card-wrapper">
                 <div class="staff__card-picture-wrapper">
-                  <% if (locals.bookingProfile && bookingProfile.profileImageUrl) { %>
+                  <% if (bookingProfile && bookingProfile.profileImageUrl) { %>
                     <img src="<%= bookingProfile.profileImageUrl %>" />
-                  <% } else if (locals.bookingProfile) { %>
+                  <% } else if (bookingProfile) { %>
                     <%= getStaffInitials(bookingProfile.displayName) %>
                   <% } else { %>
                     <%= getStaffInitials("any") %>
@@ -45,7 +44,7 @@
                 </div>
                 <div class="steps__staff-step-body">
                   <div class="steps__step-name">
-                    <% if (locals.bookingProfile) { %>
+                    <% if (bookingProfile) { %>
                       <%= bookingProfile.displayName %>
                     <% } else { %>
                       Any staff member
@@ -73,7 +72,7 @@
         </div>
       </div>
       <div class="content-main">
-        <%- include('../partials/date-selector', { availabilities }); %>
+        <%- include('../partials/date-selector', { availabilities, serviceItems, bookingProfile }); %>
       </div>
     </div>
   </body>

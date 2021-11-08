@@ -43,16 +43,56 @@ router.post("/", async (req, res, next) => {
     const cardToken = req.body.cardToken;
     const customerId = req.body.customerId;
 
-    const serviceId = req.query.serviceId;
-    const serviceVariationVersion = req.query.version;
+    const serviceIds = JSON.parse(req.query.serviceIds);
+//    const serviceVariationVersion = req.query.version;
     const staffId = req.query.staffId;
     const startAt = req.query.startAt;
 
     try {
     
     // retrieve service info
-    const { result: { object: serviceInfo } } = await catalogApi.retrieveCatalogObject(serviceId);
-    const durationMinutes = convertMsToMins(serviceInfo.itemVariationData.serviceDuration);
+    const { result } = await catalogApi.batchRetrieveCatalogObjects({
+        objectIds: serviceIds
+    });
+
+    const serviceItems = result.objects;
+
+    let durationMinutes = 0n;
+    let depositAmount = 0n;
+    let appointmentSegments = [];
+
+    serviceItems.forEach(service => {
+        const appointmentSegment = {};
+        Object.defineProperty(appointmentSegment, 'durationMinutes', {
+            get() {
+                return convertMsToMins(service.itemVariationData.serviceDuration);
+            }
+        });
+        Object.defineProperty(appointmentSegment, 'serviceVariationId', {
+            get() {
+                return service.id;
+            }
+        });
+        Object.defineProperty(appointmentSegment, 'serviceVariationVersion', {
+            get() {
+                return Number(service.version);
+            }
+        });
+        Object.defineProperty(appointmentSegment, 'teamMemberId', {
+            get() {
+                return staffId;
+            }
+        });
+
+
+        durationMinutes = durationMinutes + service.itemVariationData.serviceDuration;
+        depositAmount = depositAmount + service.itemVariationData.priceMoney.amount;
+        appointmentSegments.push(appointmentSegment);
+    })
+    
+    durationMinutes = convertMsToMins(durationMinutes);
+    depositAmount = Math.round(Number(depositAmount/2n));
+    console.log(depositAmount);
 
     //const durationMinutes = convertMsToMins(serviceInfo.body.itemData.serviceDuration);
     if (!customerId) {
@@ -81,7 +121,7 @@ router.post("/", async (req, res, next) => {
             sourceId: storeCardConfirmation.id,
             idempotencyKey: uuidv4(),
             amountMoney: {
-                amount: serviceInfo.itemVariationData.priceMoney.amount,
+                amount: depositAmount,
                 currency: 'USD'
             },
             customerId: customer.id
@@ -91,14 +131,7 @@ router.post("/", async (req, res, next) => {
         const { result: { booking } } = await bookingsApi.createBooking({
         booking: {
             customerId: customer.id,
-            appointmentSegments: [
-            {
-                durationMinutes,
-                serviceVariationId: serviceId,
-                serviceVariationVersion,
-                teamMemberId: staffId,
-            }
-            ],
+            appointmentSegments: appointmentSegments,
             customerNote,
             locationId,
             startAt,
@@ -118,7 +151,7 @@ router.post("/", async (req, res, next) => {
             sourceId: cardToken,
             idempotencyKey: uuidv4(),
             amountMoney: {
-                amount: serviceInfo.itemVariationData.priceMoney.amount,
+                amount: depositAmount,
                 currency: 'USD'
             },
             customerId: customerId
@@ -127,14 +160,7 @@ router.post("/", async (req, res, next) => {
         // Create booking
         const { result: { booking } } = await bookingsApi.createBooking({
         booking: {
-            appointmentSegments: [
-            {
-                durationMinutes,
-                serviceVariationId: serviceId,
-                serviceVariationVersion,
-                teamMemberId: staffId,
-            }
-            ],
+            appointmentSegments: appointmentSegments,
             customerId: customerId,
             customerNote,
             locationId,

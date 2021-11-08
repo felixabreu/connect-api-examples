@@ -37,6 +37,7 @@ router.get("/", async (req, res, next) => {
     if (!items) {
       items = [];
     }
+    console.log(items);
 
     res.render("pages/select-service", { cancel, items });
   } catch (error) {
