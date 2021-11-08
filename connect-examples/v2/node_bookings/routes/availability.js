@@ -74,20 +74,17 @@ async function searchActiveTeamMembers(serviceId) {
  * This endpoint is in charge of retrieving the availability for the service + team member
  * If the team member is set as anyStaffMember then we retrieve the availability for all team members
  */
-router.get("/:staffId/:serviceId", async (req, res, next) => {
-  const serviceId = req.params.serviceId;
-  const serviceVersion = req.query.version;
-  const staffId = req.params.staffId;
+router.post("/", async (req, res, next) => {
+    /*
+      serviceIds - Id's of the services user selected
+    */
+  const serviceIds = JSON.parse(req.query.ids);
   const startAt = dateHelpers.getStartAtDate();
   const searchRequest = {
     query: {
       filter: {
         locationId,
-        segmentFilters: [
-          {
-            serviceVariationId: serviceId,
-          },
-        ],
+        segmentFilters: [],
         startAtRange: {
           endAt: dateHelpers.getEndAtDate(startAt).toISOString(),
           startAt: startAt.toISOString(),
@@ -95,45 +92,83 @@ router.get("/:staffId/:serviceId", async (req, res, next) => {
       }
     }
   };
+
   try {
-    // get service item - needed to display service details in left pane
-    const retrieveServicePromise = catalogApi.retrieveCatalogObject(serviceId, true);
+    /*
+      result - an object with the value of an array of service objects. service objects contain all information for the services selected by user.
+    */
+    const { result } = await catalogApi.batchRetrieveCatalogObjects({
+      objectIds: serviceIds,
+      includeRelatedObjects: true
+    });
+    console.log(result);
+
+    /*
+      teamMemberBookingProfiles - an array of objects containing the booking profiles for members at the location. Only member should be Sonia. 
+    */
+    const { result: { teamMemberBookingProfiles } } = await bookingsApi.listTeamMemberBookingProfiles(true, undefined, undefined, locationId);
+    // console.log(teamMemberBookingProfiles);
+    const teamMember = teamMemberBookingProfiles[0];
+
+    /*
+      Create segmentFilters for each service the user selected. Push each segment filter created onto the segment filter array in the searchRequest object. 
+    */
+    serviceIds.forEach(serviceId => {
+      const segmentFilter = {
+        serviceVariationId: serviceId,
+        teamMemberIdFilter: {
+          any: [
+            teamMember.teamMemberId
+          ]
+        }
+      }
+      searchRequest.query.filter.segmentFilters.push(segmentFilter);
+    });
+
     let availabilities;
-    // additional data to send to template
-    let additionalInfo;
-    // search availability for the specific staff member if staff id is passed as a param
-    if (staffId === ANY_STAFF_PARAMS) {
-      const [ services, teamMembers ] = await searchActiveTeamMembers(serviceId);
-      searchRequest.query.filter.segmentFilters[0].teamMemberIdFilter = {
-        any: teamMembers,
-      };
+    // // additional data to send to template
+    // let additionalInfo;
+    // // search availability for the specific staff member if staff id is passed as a param
+    // if (staffId === ANY_STAFF_PARAMS) {
+    //   const [ services, teamMembers ] = await searchActiveTeamMembers(serviceId);
+    //   searchRequest.query.filter.segmentFilters[0].teamMemberIdFilter = {
+    //     any: teamMembers,
+    //   };
+    //   // get availability
+    //   const { result } = await bookingsApi.searchAvailability(searchRequest);
+    //   availabilities = result.availabilities;
+    //   additionalInfo = {
+    //     serviceItem: services.relatedObjects.filter(relatedObject => relatedObject.type === "ITEM")[0],
+    //     serviceVariation: services.object
+    //   };
+    // } else {
+    //   searchRequest.query.filter.segmentFilters[0].teamMemberIdFilter = {
+    //     any: [
+    //       staffId
+    //     ],
+    //   };
       // get availability
-      const { result } = await bookingsApi.searchAvailability(searchRequest);
-      availabilities = result.availabilities;
-      additionalInfo = {
-        serviceItem: services.relatedObjects.filter(relatedObject => relatedObject.type === "ITEM")[0],
-        serviceVariation: services.object
-      };
-    } else {
-      searchRequest.query.filter.segmentFilters[0].teamMemberIdFilter = {
-        any: [
-          staffId
-        ],
-      };
-      // get availability
-      const availabilityPromise = bookingsApi.searchAvailability(searchRequest);
+      const { result: serviceAvailabilities } = await bookingsApi.searchAvailability(searchRequest);
       // get team member booking profile - needed to display team member details in left pane
-      const bookingProfilePromise = bookingsApi.retrieveTeamMemberBookingProfile(staffId);
-      const [ { result }, { result: services }, { result: { teamMemberBookingProfile } } ] = await Promise.all([ availabilityPromise, retrieveServicePromise, bookingProfilePromise ]);
-      availabilities = result.availabilities;
-      additionalInfo = {
-        bookingProfile: teamMemberBookingProfile,
-        serviceItem: services.relatedObjects.filter(relatedObject => relatedObject.type === "ITEM")[0],
-        serviceVariation: services.object
-      };
-    }
-    // send the serviceId & serviceVersion since it's needed to book an appointment in the next step
-    res.render("pages/availability", { availabilities, serviceId, serviceVersion, ...additionalInfo });
+      // const bookingProfilePromise = bookingsApi.retrieveTeamMemberBookingProfile(teamMember.teamMemberId);
+      // const [ { result: availabilities }, { result: services }, { result: { teamMemberBookingProfile } } ] = await Promise.all([ availabilityPromise, retrieveServicePromise]);
+      availabilities = serviceAvailabilities.availabilities;
+      // console.log(availabilities);
+      // additionalInfo = {
+      //   bookingProfile: teamMember,
+      //   serviceItems: result
+      // };
+      const bookingProfile = teamMember;
+      const serviceItems = result.objects;
+      let depositAmount = 0n;
+      serviceItems.forEach(service => {
+          depositAmount = depositAmount + service.itemVariationData.priceMoney.amount;
+      });
+
+      depositAmount = ((Number(depositAmount)/2)) * .01;
+    // // send the serviceId & serviceVersion since it's needed to book an appointment in the next step
+    // console.log("About to render appointments");
+    res.render("pages/availability", { availabilities, bookingProfile, serviceItems, depositAmount});
   } catch (error) {
     console.error(error);
     next(error);

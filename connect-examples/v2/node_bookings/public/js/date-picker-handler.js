@@ -6,16 +6,22 @@ class DatePickerHandler {
   /**
    * Constructor for DatePickerHandler
    * @param {Availability[]} availabilities
-   * @param {String} serviceId
-   * @param {String} serviceVersion
+   * @param {CatalogObject[]} serviceItems
    * @param {String} bookingId - booking id if rescheduling an existing booking. Else undefined
    * @param {String} businessTimeZone - the business IANA time zone
    */
-  constructor(availabilities, serviceId, serviceVersion, bookingId, businessTimeZone) {
+  constructor(availabilities, serviceItems, bookingProfile, bookingId, businessTimeZone) {
     this.availabilityMap = this.createDateAvailableTimesMap(availabilities, businessTimeZone);
-    this.serviceId = serviceId;
-    this.serviceVersion = serviceVersion;
+ //   this.serviceId = serviceId;
+//    this.serviceVersion = serviceVersion;
     this.bookingId = bookingId;
+    this.teamMemberId = bookingProfile.teamMemberId;
+    this.serviceItems = [];
+    console.log(this.teamMemberId);
+    console.log(serviceItems);
+    serviceItems.forEach(service => {
+      this.serviceItems.push(service.id);
+    })
     // show the available times for today's date
     const now = new Date();
     this.selectNewDate(new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split("T")[0]);
@@ -154,12 +160,14 @@ class DatePickerHandler {
       form.method = this.bookingId ? "post" : "get";
       // create hidden parameters for GET contact action
       if (form.method === "get") {
+        console.log("serviceItems: ", JSON.stringify(this.serviceItems));
         const queryParams = {
-          serviceId: this.serviceId,
-          staff: availability.teamMemberId,
-          startAt: availability.date,
-          version: this.serviceVersion,
+          serviceItems: JSON.stringify(this.serviceItems),
+          staff: this.teamMemberId,
+          startAt: availability.date
         };
+
+
         Object.keys(queryParams).forEach(queryParam => {
           const input = document.createElement("input");
           input.type = "hidden";

@@ -36,8 +36,7 @@ const {
  */
 router.post("/search", async (req, res, next) => {
     const phoneNumber = "+1" + req.body.phoneNumber;
-    const serviceId = req.query.serviceId;
-    const serviceVersion = req.query.version;
+    const serviceIds = JSON.parse(req.query.serviceIds);
     const staffId = req.query.staffId;
     const startAt = req.query.startAt;
 
@@ -53,13 +52,22 @@ router.post("/search", async (req, res, next) => {
         });
 
         // Send request to get the service associated with the given item variation ID, and related objects.
-        const retrieveServicePromise = catalogApi.retrieveCatalogObject(serviceId, true);
+        const { result } = await catalogApi.batchRetrieveCatalogObjects({
+            objectIds: serviceIds
+        });
+
+        const serviceItems = result.objects;
+        let depositAmount = 0n;
+        serviceItems.forEach(service => {
+            depositAmount = depositAmount + service.itemVariationData.priceMoney.amount;
+        });
+
+        depositAmount = ((Number(depositAmount)/2)) * .01;
 
         // Send request to get the team member profile of the staff selected
-        const retrieveTeamMemberPromise = bookingsApi.retrieveTeamMemberBookingProfile(staffId);
+        const { result: { teamMemberBookingProfile } } = await bookingsApi.retrieveTeamMemberBookingProfile(staffId);
 
-        const [ { result: { object : serviceVariation, relatedObjects } }, { result: { teamMemberBookingProfile } } ] = await Promise.all([ retrieveServicePromise, retrieveTeamMemberPromise ]);
-        const serviceItem = relatedObjects.filter(relatedObject => relatedObject.type === "ITEM")[0];
+        // const serviceItem = relatedObjects.filter(relatedObject => relatedObject.type === "ITEM")[0];
 
         let matchingCustomers = [];
 
@@ -73,10 +81,11 @@ router.post("/search", async (req, res, next) => {
                 customerId = matchingCustomers[0].id;
                 twilioClient.verify.services(twilioVerificationSID).verifications.create({to: phoneNumber, channel: 'sms'})
                 .then(verification => console.log("message status", verification.status));
-                res.render("pages/contact", { serviceItem, serviceVariation, serviceVersion, startAt, teamMemberBookingProfile, phoneNumber, customerId });
+//                res.render("pages/contact", { serviceItems, serviceVariation, serviceVersion, startAt, teamMemberBookingProfile, phoneNumber, customerId });
+                res.render("pages/contact", { serviceItems, serviceIds, startAt, teamMemberBookingProfile, phoneNumber, customerId, depositAmount });
             }
         } else {
-            res.render("pages/customers", { serviceItem, serviceVariation, serviceVersion, startAt, teamMemberBookingProfile, customerId, phoneNumber, verified  });
+            res.render("pages/customers", { serviceItems, serviceIds, startAt, teamMemberBookingProfile, customerId, phoneNumber, verified, depositAmount  });
         }
 
      
@@ -97,8 +106,7 @@ router.post("/validate", async (req, res, next) => {
     const authCode = req.body.authCode;
     const customerId = req.body.customerId;
     const phoneNumber = req.body.phoneNumber;
-    const serviceId = req.query.serviceId;
-    const serviceVersion = req.query.version;
+    const serviceIds = JSON.parse(req.query.serviceIds);
     const staffId = req.query.staffId;
     const startAt = req.query.startAt;
     let verificationStatus;
@@ -115,13 +123,21 @@ router.post("/validate", async (req, res, next) => {
         const { result: { cards } } = await cardsApi.listCards('', customerId);
 
         // Send request to get the service associated with the given item variation ID, and related objects.
-        const retrieveServicePromise = catalogApi.retrieveCatalogObject(serviceId, true);
+        const { result } = await catalogApi.batchRetrieveCatalogObjects({
+            objectIds: serviceIds
+        });
+
+        const serviceItems = result.objects;
+        let depositAmount = 0n;
+        serviceItems.forEach(service => {
+            depositAmount = depositAmount + service.itemVariationData.priceMoney.amount;
+        });
+
+        depositAmount = ((Number(depositAmount)/2)) * .01;
+
 
         // Send request to get the team member profile of the staff selected
-        const retrieveTeamMemberPromise = bookingsApi.retrieveTeamMemberBookingProfile(staffId);
-
-        const [ { result: { object : serviceVariation, relatedObjects } }, { result: { teamMemberBookingProfile } } ] = await Promise.all([ retrieveServicePromise, retrieveTeamMemberPromise ]);
-        const serviceItem = relatedObjects.filter(relatedObject => relatedObject.type === "ITEM")[0];
+        const { result: { teamMemberBookingProfile } } = await bookingsApi.retrieveTeamMemberBookingProfile(staffId);
 
         let card;
 
@@ -140,20 +156,22 @@ router.post("/validate", async (req, res, next) => {
         
         //res.send(toObject(responseBody));
 
-        res.render("pages/customers", { serviceItem, serviceVariation, serviceVersion, startAt, teamMemberBookingProfile, customerId, phoneNumber, customer, card, verified });
+        res.render("pages/customers", { serviceItems, serviceIds, startAt, teamMemberBookingProfile, customerId, phoneNumber, customer, card, verified, cards, depositAmount });
 
     } else {
 
         // Send request to get the service associated with the given item variation ID, and related objects.
-        const retrieveServicePromise = catalogApi.retrieveCatalogObject(serviceId, true);
+        const { result } = await catalogApi.batchRetrieveCatalogObjects({
+            objectIds: serviceIds
+        });
+
+        const serviceItems = result.objects;
 
         // Send request to get the team member profile of the staff selected
-        const retrieveTeamMemberPromise = bookingsApi.retrieveTeamMemberBookingProfile(staffId);
+        const { result: { teamMemberBookingProfile } } = await bookingsApi.retrieveTeamMemberBookingProfile(staffId);
 
-        const [ { result: { object : serviceVariation, relatedObjects } }, { result: { teamMemberBookingProfile } } ] = await Promise.all([ retrieveServicePromise, retrieveTeamMemberPromise ]);
-        const serviceItem = relatedObjects.filter(relatedObject => relatedObject.type === "ITEM")[0];
         const verified = false;
-        const responseBody = { verified, serviceItem, serviceVariation, serviceVersion, startAt, teamMemberBookingProfile, phoneNumber }
+        const responseBody = { verified, serviceItems, serviceIds, startAt, teamMemberBookingProfile, phoneNumber }
         console.log("Verification failed. Retry verification");
         //res.send(toObject(responseBody));
     }

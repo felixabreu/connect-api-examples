@@ -39,5 +39,5 @@
   </div>
 </div>
 <script>
-  const datePickerHandler = new DatePickerHandler(<%- stringifyJSON(availabilities) %>, "<%- serviceId %>", "<%- serviceVersion %>", "<%- locals.bookingId %>", "<%- location.timezone %>");
+  const datePickerHandler = new DatePickerHandler(<%- stringifyJSON(availabilities) %>, <%- stringifyJSON(serviceItems) %>, <%- stringifyJSON(bookingProfile) %>, "<%- locals.bookingId %>", "<%- location.timezone %>");
 </script>

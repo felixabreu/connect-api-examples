@@ -472,6 +472,27 @@ a:visited {
   background-color: rgba(0, 0, 0, 0.07);
 }
 
+.sq-services.button.btn-primary {
+  width: 100%;
+  margin-right: 20px;
+  color: white;
+  background-color: rgba(0, 106, 255, 1);
+  font-weight: bold;
+  border: none;
+  font-size: 16px;
+  padding: 17px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.sq-services.button.btn-primary:hover {
+  background-color: #005fe6;
+}
+.sq-services.button.btn-primary:disabled {
+  cursor: default;
+  background-color: grey;
+}
+
 .availability-staff__card-wrapper {
   display: flex;
   justify-content: left;
@@ -591,6 +612,7 @@ a:visited {
 .content__service.message {
   text-align: center;
   margin-top: 68px;
+  margin-bottom: 80px;
 }
 
 .content__service.message-sm {
@@ -650,6 +672,58 @@ a:visited {
 .success-toast img {
   margin-right: 12px;
   vertical-align: middle;
+}
+
+/* Custom dropdown */
+.custom-dropdown {
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.custom-dropdown:hover {
+  cursor: pointer;
+}
+
+.custom-dropdown select {
+  background-color: #ffffff;
+  color: #000000;
+  font-size: inherit;
+  padding: .5em;
+  padding-right: 2.5em; 
+  border-radius: 3px;
+  text-indent: 0.01px;
+  text-overflow: '';
+  -webkit-appearance: button; /* hide default arrow in chrome OSX */
+  border-color: #000000;
+}
+
+.custom-dropdown::before,
+.custom-dropdown::after {
+  position: absolute;
+  pointer-events: none;
+}
+
+
+.custom-dropdown::before { /*  Custom dropdown arrow cover */
+  width: 2em;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 0 3px 3px 0;
+}
+
+.custom-dropdown select[disabled] {
+  color: rgba(0,0,0,.3);
+}
+
+
+.custom-dropdown::before {
+  background-color: rgba(0,0,0,.15);
+}
+
+.custom-dropdown::after {
+  color: rgba(0,0,0,.4);
 }
 
 /* Support smaller screens up to 700px */
