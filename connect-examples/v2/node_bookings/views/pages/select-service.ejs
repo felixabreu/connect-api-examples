@@ -5,7 +5,6 @@
   <link href="/stylesheets/style.css" rel="stylesheet" type="text/css">
   <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
   <script>
-    //add logic to create an array of services user selects. go through array, append a - between each service ID, and serviceID query should be that concatenated string
     let selectedServices = [];
 
 
@@ -45,6 +44,38 @@
               }
             });
     }
+    function toggleMenu(e) {
+      var currentButton = e.srcElement;
+      
+      console.log(e)
+
+      var panel = currentButton.nextElementSibling;
+      console.log(panel);
+      if (panel.style.display !== "block" ) {
+        panel.style.display = "block";
+        currentButton.style.backgroundColor = "rgba(0, 106, 255, 1)";
+        currentButton.style.color = "#ffffff";
+      } else {
+        panel.style.display = "none";
+        currentButton.style.backgroundColor = "#ffffff";
+        currentButton.style.color = "#000000";
+      }
+  //     if (panel.style.display === "block") {
+  //       panel.style.display = "none";
+  //       currentButton.style.backgroundColor = "#ffffff";
+  //       currentButton
+  //       color: white;
+  // background-color: rgba(0, 106, 255, 1);
+
+  //     } else {
+  //       panel.style.display = "block";
+  //       panel.slideDown();
+  //       currentButton.style.backgroundColor = "#ccc";
+  //     }
+      //   });
+      // }
+    }
+
   </script>
 </head>
 
@@ -131,32 +162,49 @@
       <h4> Book an appointment </h4>
       <h4 class="title">Services</h4>
       <h4 class="underline"></h4>
-      <div class="cards">
-        <% items.forEach(function(item) { %>
-          <% item.itemData.variations.forEach(function(variation) { %>
 
-            <!-- <a href="/staff/<%= variation.id %>?version=<%= variation.version %>"> -->
-              <label>
-              <div class="card__wrapper">
+
+      <div class="cards">
+        <% categories.forEach(function(category) { %>
+
+              <button class="card__wrapper accordion" onclick="toggleMenu(event)"><h4><%= category.name %></h4></button>
+              <!-- <div class="card__wrapper">
                 <div class="card__info">
-                  <h4><%= variation.itemVariationData.name %></h4>
-                  <h5 class="card__description"><%= item.itemData.description %></h5>
-                  <span class="card__details">
-                    <%if (variation.itemVariationData.pricingType === "FIXED_PRICING") { %>
-                      <%= formatMoney(variation.itemVariationData.priceMoney.amount, variation.itemVariationData.priceMoney.currency) %>
-                    <% } else { %>
-                      Price Varies
-                    <% } %>
-                    • <%= formatTime(variation.itemVariationData.serviceDuration) %>
-                    </span>
+                  <h4><%= category.name %></h4>
                 </div>
-                <input type="checkbox" name="service_item"  id="service-item-wrapper" value="<%= variation.id %>" onclick="updateServicesList(value)" onmouseup>
-                <!-- <span class="card__icon"></span>
-                <img src="images/side-caret.svg"> -->
+              
+                - <span class="card__icon"></span>
+                <img src="images/side-caret.svg">
+              </div> -->
+              <div style="display: none;">
+              <% category.items.forEach(function(item) { %>
+                <% item.itemData.variations.forEach(function(variation) { %>
+          
+                  <!-- <a href="/staff/<%= variation.id %>?version=<%= variation.version %>"> -->
+                    <label>
+                    <div class="card__wrapper smaller__card">
+                      <div class="card__info">
+                        <h4><%= variation.itemVariationData.name %></h4>
+                        <h5 class="card__description"><%= item.itemData.description %></h5>
+                        <span class="card__details">
+                          <%if (variation.itemVariationData.pricingType === "FIXED_PRICING") { %>
+                            <%= formatMoney(variation.itemVariationData.priceMoney.amount, variation.itemVariationData.priceMoney.currency) %>
+                          <% } else { %>
+                            Price Varies
+                          <% } %>
+                          • <%= formatTime(variation.itemVariationData.serviceDuration) %>
+                          </span>
+                      </div>
+                      <input type="checkbox" name="service_item"  id="service-item-wrapper" value="<%= variation.id %>" onclick="updateServicesList(value)" onmouseup>
+                      <!-- <span class="card__icon"></span>
+                      <img src="images/side-caret.svg"> -->
+                    </div>
+                    </label>
+                  </a>
+                <%}); %>
+              <%}); %>
               </div>
-              </label>
-            </a>
-          <%}); %>
+
         <%}); %>
         <% if (!items.length) {%>
           <div class="card__wrapper disabled"></div>

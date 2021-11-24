@@ -34,12 +34,44 @@ router.get("/", async (req, res, next) => {
       productTypes: [ "APPOINTMENTS_SERVICE" ]
     });
 
+    const { result: { objects } }  = await catalogApi.searchCatalogObjects({
+      objectTypes: [
+        'CATEGORY'
+      ]
+    });
+
+    let categories = [];
+
     if (!items) {
       items = [];
     }
-    console.log(items);
+    // console.log(items);
+    console.log(objects);
 
-    res.render("pages/select-service", { cancel, items });
+    objects.forEach(category => {
+      const categoryName = category.categoryData.name;
+      const categoryId = category.id;
+
+      const categoryInfo = {
+        name: categoryName,
+        id: categoryId,
+        items: []
+      }
+
+      items.forEach(item => {
+        const itemCategoryId = item.itemData.categoryId;
+
+        if (itemCategoryId.localeCompare(categoryId) === 0) {
+          categoryInfo.items.push(item);
+        }
+      })
+      categories.push(categoryInfo);
+    });
+
+
+    console.log(categories);
+
+    res.render("pages/select-service", { cancel, items, categories });
   } catch (error) {
     console.error(error);
     next(error);

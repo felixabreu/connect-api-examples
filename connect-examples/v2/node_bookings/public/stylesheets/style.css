@@ -147,6 +147,31 @@ a:visited {
   background: #f5f6f7;
 }
 
+button.card__wrapper {
+  flex-direction: row;
+  align-items: center;
+  padding: 32px;
+  left: 592px;
+  top: 254px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+  border-radius: 12px;
+  margin: 24px 0px 24px 0px;
+  display: flex;
+  width: 100%;
+}
+
+.active__card {
+  background-color: #ccc; 
+}
+
+.smaller__card {
+  width: 95%;
+  float: right;
+  margin-top: 0px;
+}
+
 .card__description {
   color: rgba(0, 0, 0, 0.55);
   margin-top: 4px;
