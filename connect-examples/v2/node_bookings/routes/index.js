@@ -19,7 +19,8 @@ const contactRoute = require("./contact");
 const servicesRoute = require("./services");
 const staffRoute = require("./staff");
 const customerRoute = require("./customers");
-const paymentRoute = require("./payments")
+const paymentRoute = require("./payments");
+const historyRoute = require("./history");
 
 router.use("/availability", availabilityRoute);
 router.use("/contact", contactRoute);
@@ -28,6 +29,7 @@ router.use("/staff", staffRoute);
 router.use("/booking", bookingRoute);
 router.use("/customers", customerRoute);
 router.use("/payments", paymentRoute);
+router.use("/history", historyRoute);
 
 /**
  * GET /

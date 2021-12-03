@@ -7,7 +7,6 @@
   <script>
     let selectedServices = [];
 
-
     function updateServicesList(value) {
       const continueButton = document.getElementById('continueButton');
       const form = document.getElementById('form');
@@ -149,6 +148,9 @@
         <form method="POST" id="form">
           <button class="sq-services button btn-primary" id="continueButton" disabled type="submit">Continue</button>
         </form>
+          <a href="/history">
+          <button class="sq-services button btn-primary" id="viewHistoryButton">View Reservation History</button>
+          </a>
       <!-- <button type="button" class="sq-services button btn-primary" id="continueButton" disabled onclick="submitServicesList()" href= >Continue</button> -->
       <%if (cancel === "success") { %>
         <div class="success-toast">

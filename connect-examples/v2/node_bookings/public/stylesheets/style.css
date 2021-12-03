@@ -687,7 +687,7 @@ button.card__wrapper {
   line-height: 48px;
   text-align: center;
   color: rgba(0, 0, 0, 0.9);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 2px solid rgba(0, 0, 0, 1);
   box-sizing: border-box;
   border-radius: 50px;
   background-color: white;
@@ -697,6 +697,10 @@ button.card__wrapper {
 .success-toast img {
   margin-right: 12px;
   vertical-align: middle;
+}
+.fail-icon {
+  width: 16px;
+  height: 24px;
 }
 
 /* Custom dropdown */
@@ -770,4 +774,16 @@ button.card__wrapper {
 .card-switcher:hover {
   cursor: pointer;
   color: blue;
+}
+.center-content {
+  text-align: center;
+}
+.full-width {
+  width: 100%;
+}
+
+.error-text {
+  font-size: 16px;
+  color: red;
+  font-weight: bold;
 }
