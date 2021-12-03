@@ -1,0 +1,134 @@
+<% include("../functions") %>
+<html>
+
+<head>
+  <link rel="stylesheet" href="/stylesheets/style.css" />
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script>
+    $("#contact-form").submit(function(e) {
+
+    e.preventDefault(); // avoid to execute the actual submit of the form.
+
+    var form = $(this);
+    var url = form.attr('action');
+
+    $.ajax({
+          type: "GET",
+          url: url,
+          data: form.serialize(), // serializes the form's elements.
+          success: function(data)
+          {
+
+          }
+        });
+
+
+    });
+;
+  </script>
+</head>
+
+<body>
+  <header>
+    <%- include("../partials/header") %>
+  </header>
+
+  <div class="content">
+    <div class="content-left business">
+        <div class="business__logo">
+          <%if (location.logoUrl) { %>
+            <img src="<%= location.logoUrl %>">
+          <% } else { %>
+            <img src="/images/blank-logo.svg">
+          <% } %>
+        </div>
+        <h3>
+          <%= location.businessName || location.name %>
+        </h3>
+        <%if (location.description) { %>
+          <h5> <%= location.description %> </h5>
+        <% } %>
+        <div class="business__location">
+          <h4>Location</h4>
+          <div>
+            <%if (location.address) { %>
+              <%if (location.address.addressLine1) { %>
+                <span><%= location.address.addressLine1 %>, </span> <br>
+              <% } %>
+              <%if (location.address.addressLine2) { %>
+                <span><%= location.address.addressLine2 %>, </span>
+              <% } %>
+              <span>
+                <%= location.address.locality %>,
+                <%= location.address.administrativeDistrictLevel1 %>,
+                <%= location.address.postalCode %>
+              </span>
+            <% } else { %>
+              <span>No location information</span>
+            <% } %>
+          </div>
+        </div>
+        <div class="business__contact">
+          <h4>Hours</h4>
+          <div>
+            <span>Monday, Tuesday: 1pm-8pm</span> <br>
+            <span>Wednesday, Friday: 2pm-8pm</span> <br>
+            <span>Saturday: 1pm-6pm</span> <br>
+            <span>Thursday, Sunday: Closed</span>
+          </div>
+        </div>
+        <div class="business__contact">
+        <h4>Contact</h4>
+        <%if (location.phoneNumber || location.businessEmail) { %>
+          <%if (location.businessEmail) { %>
+            Email: <span> <%= location.businessEmail %> </span>
+            <br>
+          <% } %>
+          <%if (location.phoneNumber) { %>
+            Phone:
+            <span> <%= location.phoneNumber %> </span>
+          <% } %>
+        <% } else { %>
+            <span>No contact information</span>
+        <% } %>
+        </div>
+        <div class="business__contact">
+  
+        </div>
+        <!-- <a class="sq-services button btn-primary" id="continueButton" disabled> -->
+        <a href="/services">
+            <button class="sq-services button btn-primary" >Make A Reservation</button>
+        </a>
+        <!-- <button type="button" class="sq-services button btn-primary" id="continueButton" disabled onclick="submitServicesList()" href= >Continue</button> -->
+    </div>
+
+      <div class="content-main">
+      <% if (!phoneNumber) { %>
+      <h4>Phone Number</h4>
+      <form class="sq-form-control contact-form" method="POST" action="/history/verifynumber">
+        <input class="half-width" type="text" name="phoneNumber" required maxlength="10" placeholder="3477689349" pattern="^[0-9]{10}$" title="Invalid phone number" />
+        <button class="button btn-primary" id="verifyPhoneNumber" type="submit">Continue</button>
+      </form>
+      <%} else { %>
+        <h4>Enter Verification Code</h4>
+        <form class="sq-form-control contact-form" id="verifyForm" method="POST" action="/history/verifyauthcode">
+          <input class="half-width" type="text" name="authCode" required maxlength="6" pattern="^[0-9]{6}$" title="Please enter 6 digit authentication code" />
+          <input type="text" name="customerId" value="<%= customerId %>" style="display: none">
+          <input type="text" name="phoneNumber" value="<%= phoneNumber %>" style="display: none"/>
+          <button class="button btn-primary" type="submit">Continue</button>
+          <% if (customerId && !approved) { %>
+            <div class="center-content full-width">
+                <p class="error-text">Verification code was incorrect. Try again or request new code</p>
+            </div>
+        <%} %>
+        </form>
+
+        <!-- <form class="sq-form-control contact-form" id="requestCode" method="POST" action="/customers/search">
+          <input type="text" name="phoneNumber" value="<%= phoneNumber %>" style="display: none"/>
+          <button class="button btn-primary" type="submit">Request New Code</button>
+        </form> -->
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>
